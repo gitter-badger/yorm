@@ -1,10 +1,6 @@
-#!/usr/bin/env python
 # pylint: disable=R,C
 
-"""Unit tests for the `mapper` module."""
-
 import os
-import pytest
 from unittest.mock import patch, Mock
 
 from yorm.mapper import Helper, Mapper
@@ -144,7 +140,3 @@ class TestMapper:
         assert 1 == obj.foo
         assert 0 == obj.bar
         assert 0 == obj.qux
-
-
-if __name__ == '__main__':
-    pytest.main()
