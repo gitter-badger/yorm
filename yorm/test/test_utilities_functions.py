@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch, Mock
 
-from yorm import common
+from yorm import exceptions
 from yorm import utilities
 from yorm.base.converter import Converter
 from yorm.base.mappable import Mappable
@@ -86,7 +86,7 @@ class TestSyncObject:
     def test_multiple(self):
         """Verify mapping cannot be enabled twice."""
         sample = utilities.sync(self.Sample(), "sample.yml")
-        with pytest.raises(common.UseageError):
+        with pytest.raises(exceptions.UseageError):
             utilities.sync(sample, "sample.yml")
 
     @patch('os.path.isfile', Mock(return_value=True))
@@ -95,6 +95,18 @@ class TestSyncObject:
         with patch('yorm.common.read_text', Mock(return_value="abc: 123")):
             sample = utilities.sync(self.Sample(), "sample.yml")
         assert 123 == sample.abc
+
+    @patch('os.path.isfile', Mock(return_value=False))
+    def test_exception_when_file_expected_but_missing(self):
+        utilities.sync(self.Sample(), "sample.yml", existing=False)
+        with pytest.raises(exceptions.FileMissingError):
+            utilities.sync(self.Sample(), "sample.yml", existing=True)
+
+    @patch('os.path.isfile', Mock(return_value=True))
+    def test_exception_when_file_not_expected_but_found(self):
+        utilities.sync(self.Sample(), "sample.yml", existing=True)
+        with pytest.raises(exceptions.FileAlreadyExistsError):
+            utilities.sync(self.Sample(), "sample.yml", existing=False)
 
 
 @patch('yorm.common.create_dirname', Mock())
@@ -319,7 +331,7 @@ class TestUpdate:
         """Verify an exception is raised with the wrong base."""
         instance = Mock()
 
-        with pytest.raises(common.UseageError):
+        with pytest.raises(exceptions.UseageError):
             utilities.update(instance)
 
 
@@ -341,7 +353,7 @@ class TestUpdateObject:
         """Verify an exception is raised with the wrong base."""
         instance = Mock()
 
-        with pytest.raises(common.UseageError):
+        with pytest.raises(exceptions.UseageError):
             utilities.update_object(instance)
 
 
@@ -363,5 +375,5 @@ class TestUpdateFile:
         """Verify an exception is raised with the wrong base."""
         instance = Mock()
 
-        with pytest.raises(common.UseageError):
+        with pytest.raises(exceptions.UseageError):
             utilities.update_file(instance)

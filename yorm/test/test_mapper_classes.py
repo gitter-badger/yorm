@@ -3,6 +3,9 @@
 import os
 from unittest.mock import patch, Mock
 
+import pytest
+
+from yorm import exceptions
 from yorm.mapper import Helper, Mapper
 from yorm.converters import Integer
 
@@ -17,7 +20,7 @@ class TestHelperFake:
         mapper = Helper("fake/path/to/file")
         mapper.create(Mock())
 
-        assert not os.path.exists(mapper.path)
+        assert False is os.path.exists(mapper.path)
 
     def test_delete(self):
         """Verify fake files can be deleted."""
@@ -25,21 +28,38 @@ class TestHelperFake:
         mapper.create(None)
         mapper.delete()
 
-        assert not os.path.exists(mapper.path)
+        assert False is os.path.exists(mapper.path)
+
+    def test_create_after_delete(self):
+        mapper = Helper("fake/path/to/file")
+        mapper.create(None)
+        mapper.delete()
+
+        assert False is mapper.exists
+        assert True is mapper.deleted
+
+        mapper.create(None)
+
+        assert True is mapper.exists
+        assert False is mapper.deleted
 
     def test_modified(self):
         """Verify fake files can be modified."""
         mapper = Helper("fake/path/to/file")
-        assert mapper.modified
+
+        assert True is mapper.modified
 
         mapper.create(None)
-        assert mapper.modified
+
+        assert True is mapper.modified
 
         mapper.modified = False
-        assert not mapper.modified
+
+        assert False is mapper.modified
 
         mapper.modified = True
-        assert mapper.modified
+
+        assert True is mapper.modified
 
 
 class TestHelperReal:
@@ -52,7 +72,9 @@ class TestHelperReal:
         mapper = Helper("real/path/to/file")
         mapper.create(None)
 
-        assert os.path.isfile(mapper.path)
+        assert True is os.path.isfile(mapper.path)
+        assert True is mapper.exists
+        assert False is mapper.deleted
 
     def test_create_twice(self, tmpdir):
         """Verify the second creation is ignored."""
@@ -61,7 +83,9 @@ class TestHelperReal:
         mapper.create(None)
         mapper.create(None)
 
-        assert os.path.isfile(mapper.path)
+        assert True is os.path.isfile(mapper.path)
+        assert True is mapper.exists
+        assert False is mapper.deleted
 
     def test_delete(self, tmpdir):
         """Verify files can be deleted."""
@@ -70,7 +94,11 @@ class TestHelperReal:
         mapper.create(None)
         mapper.delete()
 
-        assert not os.path.exists(mapper.path)
+        assert False is os.path.exists(mapper.path)
+        assert False is mapper.exists
+        assert True is mapper.deleted
+        with pytest.raises(exceptions.FileDeletedError):
+            mapper.fetch(None, None)
 
     def test_delete_twice(self, tmpdir):
         """Verify the second deletion is ignored."""
@@ -78,28 +106,34 @@ class TestHelperReal:
         mapper = Helper("real/path/to/file")
         mapper.delete()
 
-        assert not os.path.exists(mapper.path)
+        assert False is os.path.exists(mapper.path)
+        assert False is mapper.exists
+        assert True is mapper.deleted
 
     def test_modified(self, tmpdir):
         """Verify files track modifications."""
         tmpdir.chdir()
         mapper = Helper("real/path/to/file")
-        assert mapper.modified
+
+        assert True is mapper.modified
 
         mapper.create(None)
-        assert mapper.modified
+
+        assert True is mapper.modified
 
         mapper.modified = False
-        assert not mapper.modified
+
+        assert False is mapper.modified
 
         mapper.modified = True
-        assert mapper.modified
+
+        assert True is mapper.modified
 
     def test_modified_deleted(self):
         """Verify a deleted file is always modified."""
         mapper = Helper("fake/path/to/file")
 
-        assert mapper.modified
+        assert True is mapper.modified
 
 
 class TestMapper:
@@ -115,17 +149,22 @@ class TestMapper:
         obj = self.MyObject()
         attrs = {'number': Integer}
         mapper = Mapper(obj, "real/path/to/file", attrs, auto=False)
+
+        assert "" == mapper.text
         assert False is mapper.auto
 
         mapper.create()
+
         assert "" == mapper.text
         assert False is mapper.auto
 
         mapper.store()
+
         assert "" == mapper.text
         assert False is mapper.auto
 
         mapper.store(force=True)
+
         assert "number: 0\n" == mapper.text
         assert False is mapper.auto
 
