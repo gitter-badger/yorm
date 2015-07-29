@@ -1,5 +1,7 @@
 # YORM
 
+[![Join the chat at https://gitter.im/jacebrowning/yorm](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jacebrowning/yorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Enables automatic, bidirectional, human-friendly mappings of object attributes to YAML files.
 
 [![Build Status](http://img.shields.io/travis/jacebrowning/yorm/master.svg)](https://travis-ci.org/jacebrowning/yorm)
